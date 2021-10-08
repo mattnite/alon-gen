@@ -1,6 +1,6 @@
 {
   "name": "alon-gen",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Generate C code for borsh serialization for Solana BPF programs",
   "main": "index.js",
   "scripts": {
