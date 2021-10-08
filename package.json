@@ -1,0 +1,25 @@
+{
+  "name": "alon-gen",
+  "version": "1.0.0",
+  "description": "Generate C code for borsh serialization for Solana BPF programs",
+  "main": "index.js",
+  "scripts": {
+    "test": "zig build test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mattnite/alon-gen.git"
+  },
+  "keywords": [
+    "serialization"
+  ],
+  "author": "mattnite",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mattnite/alon-gen/issues"
+  },
+  "homepage": "https://github.com/mattnite/alon-gen#readme",
+  "dependencies": {
+    "borsh": "^0.6.0"
+  }
+}
