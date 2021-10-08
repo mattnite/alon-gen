@@ -40,7 +40,10 @@ exports.cases = [
         ['y', 'u16'],
       ],
     },
-    examples: [],
+    examples: [
+      {x: 0, y: 0},
+      {x: 50, y: 1000},
+    ],
   },
   {
     Type: DoubleFixed,
@@ -52,7 +55,8 @@ exports.cases = [
         ['y', 'u32'],
       ],
     },
-    examples: [],
+    examples: [
+    ],
   },
 ];
 

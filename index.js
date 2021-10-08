@@ -36,11 +36,11 @@ function generate(name, schema) {
 }
 
 function genHeader(name, schema) {
-  return structDefn(name, schema) + '\n\n' + funcProto(name) + ';\n';
+  return '\n' + structDefn(name, schema) + '\n' + funcProto(name) + ';';
 }
 
 function genSource(name, schema) {
-  let ret = `${funcProto(name)} {\n`;
+  let ret = `\n${funcProto(name)} {\n`;
   let offset = 0;
   schema.fields.forEach(([fieldName, fieldType]) => {
     const c_type = c_types[fieldType];
@@ -50,7 +50,7 @@ function genSource(name, schema) {
     ret = ret.concat(`  out->${fieldName} = (${c_type}*)(input + ${offset});\n`);
     offset += sizes[fieldType];
   });
-  ret = ret.concat('  return 0;\n};\n');
+  ret = ret.concat('  return 0;\n};');
 
   return ret;
 }

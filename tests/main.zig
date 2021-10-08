@@ -1,58 +1,115 @@
 const std = @import("std");
 const c = @cImport({
-    @cInclude("single_fixed.h");
-    @cInclude("double_packed.h");
-    @cInclude("double_padded.h");
+    @cInclude("alon.h");
 });
 
 const expectEqual = std.testing.expectEqual;
 const expect = std.testing.expect;
 const isAligned = std.mem.isAligned;
 
-//const test_json = @embedFile("../output/test_data.json");
+fn ExampleType(comptime Input: type) type {
+    return struct {
+        input: Input,
+        output: []const u8,
+    };
+}
+
+const Schemas = struct {
+    single_fixed: struct {
+        examples: []ExampleType(struct {
+            x: u8,
+        }),
+    },
+    double_packed: struct {
+        examples: []ExampleType(struct {
+            x: u32,
+            y: u16,
+        }),
+    },
+    double_padded: struct {
+        examples: []ExampleType(struct {
+            x: u8,
+            y: u32,
+        }),
+    },
+};
+
+const allocator = std.testing.allocator;
+const test_json = @embedFile("../output/test_data.json");
+
+fn getSchemas(alloc: *std.mem.Allocator) !Schemas {
+    var stream = std.json.TokenStream.init(test_json);
+    return std.json.parse(Schemas, &stream, .{
+        .allocator = alloc,
+        .ignore_unknown_fields = true,
+    });
+}
 
 test "single fixed" {
-    var input = try std.testing.allocator.alloc(u8, 1);
-    std.mem.set(u8, input, 0);
-    defer std.testing.allocator.free(input);
+    const schemas = try getSchemas(allocator);
+    defer std.json.parseFree(Schemas, schemas, .{
+        .allocator = allocator,
+    });
 
-    var alon: c.single_fixed = undefined;
-    const rc = c.single_fixed_deserialize(input.ptr, &alon);
-    if (rc != 0)
-        return error.Deserialize;
+    for (schemas.single_fixed.examples) |example| {
+        var bytes = try allocator.dupe(u8, example.output);
+        defer allocator.free(bytes);
 
-    try expect(isAligned(@ptrToInt(alon.x), @alignOf(u8)));
-    try expectEqual(@as(u8, 0), alon.x.*);
+        var alon: c.single_fixed = undefined;
+        const rc = c.single_fixed_deserialize(bytes.ptr, &alon);
+        if (rc != 0)
+            return error.Deserialize;
+
+        try expect(alon.x != null);
+        try expect(isAligned(@ptrToInt(alon.x), @alignOf(u8)));
+        try expectEqual(example.input.x, alon.x.*);
+    }
 }
 
 test "double packed" {
-    var input = try std.testing.allocator.alloc(u8, 6);
-    std.mem.set(u8, input, 0);
-    defer std.testing.allocator.free(input);
+    const schemas = try getSchemas(allocator);
+    defer std.json.parseFree(Schemas, schemas, .{
+        .allocator = allocator,
+    });
 
-    var alon: c.double_packed = undefined;
-    const rc = c.double_packed_deserialize(input.ptr, &alon);
-    if (rc != 0)
-        return error.Deserialize;
+    for (schemas.double_packed.examples) |example| {
+        var bytes = try allocator.dupe(u8, example.output);
+        defer allocator.free(bytes);
 
-    try expect(isAligned(@ptrToInt(alon.x), @alignOf(u32)));
-    try expect(isAligned(@ptrToInt(alon.y), @alignOf(u16)));
-    try expectEqual(@as(u32, 0), alon.x.*);
-    try expectEqual(@as(u16, 0), alon.y.*);
+        var alon: c.double_packed = undefined;
+        const rc = c.double_packed_deserialize(bytes.ptr, &alon);
+        if (rc != 0)
+            return error.Deserialize;
+
+        try expect(alon.x != null);
+        try expect(alon.y != null);
+        try expect(isAligned(@ptrToInt(alon.x), @alignOf(u32)));
+        try expect(isAligned(@ptrToInt(alon.y), @alignOf(u16)));
+        try expectEqual(example.input.x, alon.x.*);
+        try expectEqual(example.input.y, alon.y.*);
+    }
 }
 
 test "double padded" {
-    var input = try std.testing.allocator.alloc(u8, 8);
-    std.mem.set(u8, input, 0);
-    defer std.testing.allocator.free(input);
+    const schemas = try getSchemas(allocator);
+    defer std.json.parseFree(Schemas, schemas, .{
+        .allocator = allocator,
+    });
 
-    var alon: c.double_padded = undefined;
-    const rc = c.double_padded_deserialize(input.ptr, &alon);
-    if (rc != 0)
-        return error.Deserialize;
+    for (schemas.double_padded.examples) |example| {
+        var bytes = try allocator.dupe(u8, example.output);
+        defer allocator.free(bytes);
 
-    try expect(isAligned(@ptrToInt(alon.x), @alignOf(u8)));
-    try expect(isAligned(@ptrToInt(alon.y), @alignOf(u32)));
-    try expectEqual(@as(u8, 0), alon.x.*);
-    try expectEqual(@as(u32, 0), alon.y.*);
+        var alon: c.double_padded = undefined;
+        const rc = c.double_padded_deserialize(bytes.ptr, &alon);
+        if (rc != 0)
+            return error.Deserialize;
+
+        try expect(alon.x != null);
+        try expect(alon.y != null);
+        try expect(isAligned(@ptrToInt(alon.x), @alignOf(u8)));
+        try expect(isAligned(@ptrToInt(alon.y), @alignOf(u32)));
+        try expectEqual(example.input.x, alon.x.*);
+        try expectEqual(example.input.y, alon.y.*);
+    }
 }

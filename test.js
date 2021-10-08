@@ -10,16 +10,19 @@ try {
     throw e;
 }
 
+var headerFull = '#pragma once\n\n#include <stdint.h>\n';
+var sourceFull = '#include "alon.h"\n';
 cases.forEach(schema => {
   const { header, source } = generate(schema.prefix, schema.definition);
-  const headerFull = `#pragma once\n\n#include <stdint.h>\n\n${header}`;
-  const sourceFull = `#include "${schema.prefix}.h"\n\n${source}`
-  fs.writeFileSync(`output/${schema.prefix}.h`, headerFull);
-  fs.writeFileSync(`output/${schema.prefix}.c`, sourceFull);
+  headerFull = headerFull.concat(header, '\n');
+  sourceFull = sourceFull.concat(source, '\n');
 });
 
-const test_data = cases.map(schema => ({
-  prefix: schema.prefix,
+fs.writeFileSync(`output/alon.h`, headerFull);
+fs.writeFileSync(`output/alon.c`, sourceFull);
+
+let test_data = {};
+cases.forEach(schema => test_data[schema.prefix] = {
   definition: schema.definition,
   examples: schema.examples.map(example => {
     const value = new schema.Type(example);
@@ -30,6 +33,6 @@ const test_data = cases.map(schema => ({
       output: [...buffer],
     };
   }),
-}));
+});
 
 fs.writeFileSync('output/test_data.json', JSON.stringify(test_data));
