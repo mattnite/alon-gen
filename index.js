@@ -56,11 +56,11 @@ function genSource(name, schema) {
 }
 
 function funcProto(name) {
-  return `int alon_${name}_deserialize(uint8_t *input, struct alon_${name}* out)`;
+  return `int ${name}_deserialize(uint8_t *input, struct ${name}* out)`;
 }
 
 function structDefn(name, schema) {
-  let ret = `struct alon_${name} {\n`;
+  let ret = `struct ${name} {\n`;
   schema.fields.forEach(([fieldName, fieldType]) =>
     ret = ret.concat(`    ${c_types[fieldType]}* ${fieldName};\n`));
 

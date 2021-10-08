@@ -13,11 +13,11 @@ const isAligned = std.mem.isAligned;
 
 test "single fixed" {
     var input = try std.testing.allocator.alloc(u8, 1);
+    std.mem.set(u8, input, 0);
     defer std.testing.allocator.free(input);
 
-    std.mem.set(u8, input, 0);
-    var alon: c.alon_single_fixed = undefined;
-    const rc = c.alon_single_fixed_deserialize(input.ptr, &alon);
+    var alon: c.single_fixed = undefined;
+    const rc = c.single_fixed_deserialize(input.ptr, &alon);
     if (rc != 0)
         return error.Deserialize;
 
@@ -27,11 +27,11 @@ test "single fixed" {
 
 test "double packed" {
     var input = try std.testing.allocator.alloc(u8, 6);
+    std.mem.set(u8, input, 0);
     defer std.testing.allocator.free(input);
 
-    std.mem.set(u8, input, 0);
-    var alon: c.alon_double_packed = undefined;
-    const rc = c.alon_double_packed_deserialize(input.ptr, &alon);
+    var alon: c.double_packed = undefined;
+    const rc = c.double_packed_deserialize(input.ptr, &alon);
     if (rc != 0)
         return error.Deserialize;
 
@@ -43,15 +43,14 @@ test "double packed" {
 
 test "double padded" {
     var input = try std.testing.allocator.alloc(u8, 8);
+    std.mem.set(u8, input, 0);
     defer std.testing.allocator.free(input);
 
-    std.mem.set(u8, input, 0);
-    var alon: c.alon_double_padded = undefined;
-    const rc = c.alon_double_padded_deserialize(input.ptr, &alon);
+    var alon: c.double_padded = undefined;
+    const rc = c.double_padded_deserialize(input.ptr, &alon);
     if (rc != 0)
         return error.Deserialize;
 
-    std.log.err("{}", .{@ptrToInt(alon.y) % 4});
     try expect(isAligned(@ptrToInt(alon.x), @alignOf(u8)));
     try expect(isAligned(@ptrToInt(alon.y), @alignOf(u32)));
     try expectEqual(@as(u8, 0), alon.x.*);
