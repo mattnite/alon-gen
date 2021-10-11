@@ -84,11 +84,20 @@ test "single fixed" {
         defer allocator.free(bytes);
 
         var alon: c.single_fixed = undefined;
-        const rc = c.single_fixed_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.single_fixed_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.single_fixed_deinit(&alon);
 
         try expectEqual(example.input.x, alon.x);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.single_fixed_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
 
         // too small buffer test
         try expectEqual(@as(c_int, -c.ENOBUFS), c.single_fixed_deserialize(bytes.ptr, bytes.len - 1, &alon));
@@ -106,12 +115,21 @@ test "double packed" {
         defer allocator.free(bytes);
 
         var alon: c.double_packed = undefined;
-        const rc = c.double_packed_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.double_packed_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.double_packed_deinit(&alon);
 
         try expectEqual(example.input.x, alon.x);
         try expectEqual(example.input.y, alon.y);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.double_packed_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
 
         // too small buffer test
         try expectEqual(@as(c_int, -c.ENOBUFS), c.double_packed_deserialize(bytes.ptr, bytes.len - 1, &alon));
@@ -129,12 +147,21 @@ test "double padded" {
         defer allocator.free(bytes);
 
         var alon: c.double_padded = undefined;
-        const rc = c.double_padded_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.double_padded_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.double_padded_deinit(&alon);
 
         try expectEqual(example.input.x, alon.x);
         try expectEqual(example.input.y, alon.y);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.double_padded_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
 
         // too small buffer test
         try expectEqual(@as(c_int, -c.ENOBUFS), c.double_padded_deserialize(bytes.ptr, bytes.len - 1, &alon));
@@ -152,9 +179,10 @@ test "single string" {
         defer allocator.free(bytes);
 
         var alon: c.single_string = undefined;
-        const rc = c.single_string_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.single_string_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.single_string_deinit(&alon);
 
         try expect(alon.x != null);
 
@@ -162,6 +190,14 @@ test "single string" {
         str.ptr = alon.x;
         str.len = std.mem.lenZ(alon.x);
         try expectEqualStrings(example.input.x, str);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.single_string_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
 
         // too small buffer test
         try expectEqual(@as(c_int, -c.ENOBUFS), c.single_string_deserialize(bytes.ptr, bytes.len - 1, &alon));
@@ -179,9 +215,10 @@ test "two strings" {
         defer allocator.free(bytes);
 
         var alon: c.two_strings = undefined;
-        const rc = c.two_strings_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.two_strings_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.two_strings_deinit(&alon);
 
         try expect(alon.x != null);
         try expect(alon.y != null);
@@ -196,6 +233,14 @@ test "two strings" {
 
         try expectEqualStrings(example.input.x, str_x);
         try expectEqualStrings(example.input.y, str_y);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.two_strings_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
 
         // too small buffer test
         try expectEqual(@as(c_int, -c.ENOBUFS), c.two_strings_deserialize(bytes.ptr, bytes.len - 1, &alon));
@@ -213,11 +258,20 @@ test "fixed buffer" {
         defer allocator.free(bytes);
 
         var alon: c.fixed_buffer = undefined;
-        const rc = c.fixed_buffer_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.fixed_buffer_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.fixed_buffer_deinit(&alon);
 
         try expectEqualSlices(u8, &example.input.x, &alon.x);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.fixed_buffer_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
 
         // too small buffer test
         try expectEqual(@as(c_int, -c.ENOBUFS), c.fixed_buffer_deserialize(bytes.ptr, bytes.len - 1, &alon));
@@ -235,9 +289,10 @@ test "string first" {
         defer allocator.free(bytes);
 
         var alon: c.string_first = undefined;
-        const rc = c.string_first_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.string_first_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.string_first_deinit(&alon);
 
         var str: []const u8 = undefined;
         str.ptr = alon.x;
@@ -246,6 +301,14 @@ test "string first" {
         try expectEqual(example.input.y, alon.y);
         try expectEqual(example.input.z, alon.z);
         try expectEqualSlices(u8, &example.input.q, &alon.q);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.string_first_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
 
         // too small buffer test
         try expectEqual(@as(c_int, -c.ENOBUFS), c.string_first_deserialize(bytes.ptr, bytes.len - 1, &alon));
@@ -263,9 +326,10 @@ test "optional string" {
         defer allocator.free(bytes);
 
         var alon: c.optional_string = undefined;
-        const rc = c.optional_string_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.optional_string_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.optional_string_deinit(&alon);
 
         if (example.input.x == null) {
             try expect(alon.x == null);
@@ -277,6 +341,14 @@ test "optional string" {
 
             try expectEqualStrings(example.input.x.?, str);
         }
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.optional_string_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
     }
 }
 
@@ -291,7 +363,7 @@ test "optional u64" {
         defer allocator.free(bytes);
 
         var alon: c.optional_u64 = undefined;
-        const rc = c.optional_u64_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.optional_u64_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
 
@@ -315,9 +387,10 @@ test "string fixed array" {
         defer allocator.free(bytes);
 
         var alon: c.string_fixed_array = undefined;
-        const rc = c.string_fixed_array_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.string_fixed_array_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.string_fixed_array_deinit(&alon);
 
         for (example.input.x) |example_str, i| {
             var str: []const u8 = undefined;
@@ -326,6 +399,14 @@ test "string fixed array" {
 
             try expectEqualStrings(example_str, str);
         }
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.string_fixed_array_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
     }
 }
 
@@ -340,10 +421,19 @@ test "u16 fixed array" {
         defer allocator.free(bytes);
 
         var alon: c.u16_fixed_array = undefined;
-        const rc = c.u16_fixed_array_deserialize(bytes.ptr, bytes.len, &alon);
+        var rc = c.u16_fixed_array_deserialize(bytes.ptr, bytes.len, &alon);
         if (rc != 0)
             return error.Deserialize;
+        defer c.u16_fixed_array_deinit(&alon);
 
         try expectEqualSlices(u16, &example.input.x, &alon.x);
+
+        // serialization
+        std.mem.set(u8, bytes, 0xaa);
+        rc = c.u16_fixed_array_serialize(&alon, bytes.ptr, bytes.len);
+        if (rc != 0)
+            return error.Serialize;
+
+        try expectEqualSlices(u8, example.output, bytes);
     }
 }

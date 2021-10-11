@@ -26,6 +26,12 @@ var headerFull = `
 #include <stdlib.h>
 #include <string.h>
 
+#define sol_memcpy memcpy
+#define sol_calloc calloc
+#define sol_strlen strlen
+#define sol_free free
+
+
 `;
 
 var sourceFull = '#include "alon.h"\n';
