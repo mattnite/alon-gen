@@ -11,6 +11,7 @@ pub fn build(b: *std.build.Builder) void {
     main_tests.addCSourceFile("output/alon.c", &.{});
     main_tests.setBuildMode(.Debug);
     main_tests.step.dependOn(&command_run.step);
+    main_tests.linkLibC();
 
     const test_step = b.step("test", "Run library tests");
     test_step.dependOn(&main_tests.step);

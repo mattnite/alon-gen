@@ -3,6 +3,14 @@ const fs = require('fs');
 const { cases } = require('./tests/schemas');
 const { generate } = require('./index');
 
+class Test {
+  constructor(val) {
+    for (const [key, value] of Object.entries(val)) {
+      this[key] = value;
+    }
+  }
+}
+
 try {
   fs.mkdirSync('output');
 } catch (e) {
@@ -10,7 +18,16 @@ try {
     throw e;
 }
 
-var headerFull = '#pragma once\n\n#include <stdint.h>\n';
+var headerFull = `
+#pragma once
+
+#include <errno.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
+`;
+
 var sourceFull = '#include "alon.h"\n';
 cases.forEach(schema => {
   const { header, source } = generate(schema.prefix, schema.definition);
@@ -25,8 +42,8 @@ let test_data = {};
 cases.forEach(schema => test_data[schema.prefix] = {
   definition: schema.definition,
   examples: schema.examples.map(example => {
-    const value = new schema.Type(example);
-    const borsh_schema = new Map([[schema.Type, schema.definition]]);
+    const value = new Test(example);
+    const borsh_schema = new Map([[Test, schema.definition]]);
     const buffer = borsh.serialize(borsh_schema, value);
     return {
       input: example,
