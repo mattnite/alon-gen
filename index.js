@@ -29,7 +29,11 @@ function genHeader(name, schema) {
 ${structDefn(name, schema)}
 
 ${funcProtoDeserializeRaw(name)};
+${funcProtoDeserializeAccount(name)};
+${funcProtoDeserializeInstruction(name)};
 ${funcProtoSerializeRaw(name)};
+${funcProtoSerializeAccount(name)};
+${funcProtoSerializeInstruction(name)};
 ${funcProtoDeinit(name)};
 `
 }
@@ -38,8 +42,24 @@ function funcProtoDeserializeRaw(name) {
   return `int ${name}_deserialize(const uint8_t *buf, uint64_t len, struct ${name}* out)`;
 }
 
+function funcProtoDeserializeAccount(name) {
+  return `int ${name}_deserialize_account(const SolAccountInfo *account, struct ${name}* out)`;
+}
+
+function funcProtoDeserializeInstruction(name) {
+  return `int ${name}_deserialize_instruction(const SolParameters *params, struct ${name}* out)`;
+}
+
 function funcProtoSerializeRaw(name) {
   return `int ${name}_serialize(struct ${name} *in, uint8_t *buf, uint64_t len)`;
+}
+
+function funcProtoSerializeAccount(name) {
+  return `int ${name}_serialize_account(struct ${name}* in, SolAccountInfo *account)`;
+}
+
+function funcProtoSerializeInstruction(name) {
+  return `int ${name}_serialize_instruction(struct ${name}* in, SolParameters *params)`;
 }
 
 function funcProtoDeinit(name) {
@@ -65,6 +85,16 @@ function genSource(name, schema) {
 
   ret = ret.concat(state.text, '    return 0;\n}\n\n');
 
+  ret = ret.concat(
+    `${funcProtoDeserializeAccount(name)} {\n`,
+    `    return ${name}_deserialize(account->data, account->data_len, out);\n`,
+    `}\n`,
+    `\n`,
+    `${funcProtoDeserializeInstruction(name)} {\n`,
+    `    return ${name}_deserialize(params->data, params->data_len, out);\n`,
+    `\n`,
+    `}\n\n`);
+
   state = {
     offset: 0,
     isDynamic: false,
@@ -83,7 +113,17 @@ function genSource(name, schema) {
   ret = ret.concat(state.text, '    return 0;\n}\n\n');
   ret =  ret.concat(`${funcProtoDeinit(name)} {\n`);
   ret = genDeinit(ret, name, schema);
-  ret = ret.concat('}\n');
+  ret = ret.concat('}\n\n');
+
+  ret = ret.concat(
+    `${funcProtoSerializeAccount(name)} {\n`,
+    `    return ${name}_serialize(in, account->data, account->data_len);\n`,
+    `}\n`,
+    `\n`,
+    `${funcProtoDeserializeInstruction(name)} {\n`,
+    `    return ${name}_serialize(in, params->data, params->data_len);\n`,
+    `\n`,
+    `}\n\n`);
 
   return ret;
 }
@@ -480,8 +520,12 @@ function genOptionSerialize(state, name, schema) {
 }
 
 function structDefn(name, schema) {
+  var fields_key = 'fields';
+  if (schema.kind == 'enum')
+    fields_key = 'values';
+
   let ret = `struct ${name} {\n`;
-  schema.fields.forEach(([fieldName, fieldType]) => {
+  schema[fields_key].forEach(([fieldName, fieldType]) => {
     if (fieldType instanceof Array) {
       if (fieldType.length > 1) {
         ret = ret.concat(`    ${c_types[fieldType[0]]} ${fieldName}[${fieldType[1]}];\n`);
