@@ -33,9 +33,7 @@ ${funcProtoDeserializeAccount(name)};
 ${funcProtoDeserializeInstruction(name)};
 ${funcProtoSerializeRaw(name)};
 ${funcProtoSerializeAccount(name)};
-${funcProtoSerializeInstruction(name)};
-${funcProtoDeinit(name)};
-`
+${funcProtoDeinit(name)};`
 }
 
 function funcProtoDeserializeRaw(name) {
@@ -43,11 +41,11 @@ function funcProtoDeserializeRaw(name) {
 }
 
 function funcProtoDeserializeAccount(name) {
-  return `int ${name}_deserialize_account(const SolAccountInfo *account, struct ${name}* out)`;
+  return `int ${name}_deserialize_account(SolAccountInfo *account, struct ${name}* out)`;
 }
 
 function funcProtoDeserializeInstruction(name) {
-  return `int ${name}_deserialize_instruction(const SolParameters *params, struct ${name}* out)`;
+  return `int ${name}_deserialize_instruction(SolParameters *params, struct ${name}* out)`;
 }
 
 function funcProtoSerializeRaw(name) {
@@ -111,19 +109,14 @@ function genSource(name, schema) {
   }
 
   ret = ret.concat(state.text, '    return 0;\n}\n\n');
-  ret =  ret.concat(`${funcProtoDeinit(name)} {\n`);
-  ret = genDeinit(ret, name, schema);
-  ret = ret.concat('}\n\n');
-
   ret = ret.concat(
     `${funcProtoSerializeAccount(name)} {\n`,
     `    return ${name}_serialize(in, account->data, account->data_len);\n`,
-    `}\n`,
-    `\n`,
-    `${funcProtoDeserializeInstruction(name)} {\n`,
-    `    return ${name}_serialize(in, params->data, params->data_len);\n`,
-    `\n`,
     `}\n\n`);
+
+  ret =  ret.concat(`${funcProtoDeinit(name)} {\n`);
+  ret = genDeinit(ret, name, schema);
+  ret = ret.concat('}\n\n');
 
   return ret;
 }
